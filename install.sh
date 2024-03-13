@@ -181,9 +181,9 @@ function install_bastion_script {
 
     # bastion program
     sudo mkdir -p /usr/local/persistent-bastion
-    sudo wget https://raw.githubusercontent.com/tonymarkel/persistent-bastion/main/add-bastion-user --backups=1 -P /usr/sbin/
+    sudo wget https://raw.githubusercontent.com/tonymarkel/persistent-bastion/main/add-bastion-user -P /usr/sbin/
     sudo chmod a+x /usr/sbin/add-bastion-user
-    sudo wget https://raw.githubusercontent.com/tonymarkel/persistent-bastion/main/persistent-bastion.py --backups-1 -P /usr/local/persistent-bastion/
+    sudo wget https://raw.githubusercontent.com/tonymarkel/persistent-bastion/main/persistent-bastion.py -P /usr/local/persistent-bastion/
 
     # motd
     sudo echo -e "$motd" | sudo tee -a /etc/motd
