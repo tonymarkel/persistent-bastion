@@ -42,7 +42,8 @@ resource "oci_core_instance" "bastion" {
     }
 
     metadata = {
-                "ssh_authorized_keys" = "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQCmO4xz6XnbRWdVZStWMxTGqy52hG9/kjxagEI3ZX1gevqbvKH7hhh6sNcScuraTKomk0kk6d5Azc85XZYsEvETU4ENvEUV6dhuEdCWmK7afvdoPQb82R8SqDs/6Wdr/BxBDcqYYya2VpAJ31xn5d0TfHZXZbm/fVoPemXq/fWW3QMLFmgGoCNPjgACYlxliY2ecrpvw2Uetk7HvpDXNxMXaGGvaZKVZfEj2PW/SRI0jGvlJN+1nI16C4d7qPXPPI+ix63tcLa4qSdsEsjcCsiImauG+bV1saeRH6DM11KvlQul4GuCOSyNh1MvR8vxfI3++CkTq86ApReInHYcn8KJt4zndYcdADIU1KZDlGxDFhDSGNj0maXgnIU+l/BC1S/V/6Y4BZFJi5JAPzYz0DO8IALFiKi+l2af01Llx4OhVjaNUVRClTmjpxFzIq19UUc5nX91HMvLPFfA3ENAouadfE13f2pQ+LrKw0Zxzvu2XrUAtKs2i7MX35/4+eWFZYc= tomarkel@tomarkel-mac"
+        "ssh_authorized_keys" = "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQCmO4xz6XnbRWdVZStWMxTGqy52hG9/kjxagEI3ZX1gevqbvKH7hhh6sNcScuraTKomk0kk6d5Azc85XZYsEvETU4ENvEUV6dhuEdCWmK7afvdoPQb82R8SqDs/6Wdr/BxBDcqYYya2VpAJ31xn5d0TfHZXZbm/fVoPemXq/fWW3QMLFmgGoCNPjgACYlxliY2ecrpvw2Uetk7HvpDXNxMXaGGvaZKVZfEj2PW/SRI0jGvlJN+1nI16C4d7qPXPPI+ix63tcLa4qSdsEsjcCsiImauG+bV1saeRH6DM11KvlQul4GuCOSyNh1MvR8vxfI3++CkTq86ApReInHYcn8KJt4zndYcdADIU1KZDlGxDFhDSGNj0maXgnIU+l/BC1S/V/6Y4BZFJi5JAPzYz0DO8IALFiKi+l2af01Llx4OhVjaNUVRClTmjpxFzIq19UUc5nX91HMvLPFfA3ENAouadfE13f2pQ+LrKw0Zxzvu2XrUAtKs2i7MX35/4+eWFZYc= tomarkel@tomarkel-mac"
+        user_data = "${base64encode(file("./install.sh"))}"
     }
 
     freeform_tags = {

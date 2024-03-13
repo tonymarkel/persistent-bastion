@@ -9,6 +9,26 @@ export snortpath=/usr/local/snort
 export snortlog=/var/log/snort
 export PKG_CONFIG_PATH=/usr/local/lib/pkgconfig:$PKG_CONFIG_PATH
 export ifname=$(nmcli connection show | grep System | awk '{print $2}')
+export bastionIP=$(curl https://ipinfo.io/ip)
+
+export motd=$(cat <<EOF
+##  ###  ##  Persistent Bastion
+ ###   ###   To add a bastion user:
+  #     #    -----------------------
+  #     #    $ sudo add-bastion-user
+  #     #    -----------------------
+ #       #   Copy the ssh Private Key and
+###########  send securely to the user.
+             
+To use the bastion from a remote machine:
+-----------------------------------------
+$ ssh -i <privateKey> -N -L <localport>:<Target FQDN or IP>:<remoteport> -p <remotePort> <bastion-user>@$bastionIP
+example:
+ssh -i ~/.ssh/bastionKey.pem -N -L 1522:database.mydomain.net:1522 -p 22 acme@$bastionIP
+-----------------------------------------
+NOTE: Accounts are removed after 90 Days of inactivity.
+EOF
+)
 
 export service=$(cat <<EOF
 [Unit]
@@ -30,7 +50,7 @@ EOF
 )
 export weeklycron=$(cat << EOF
 SHELL=/bin/bash
-PATH=/sbin:/bin:/usr/sbin:/usr/bin 
+PATH=/sbin:/bin:/usr/sbin:/usr/bin
 MAILTO=root HOME=/
 0 0 * * 0 yum update -y && reboot >/dev/null 2>&1
 EOF
@@ -38,9 +58,23 @@ EOF
 
 export dailycron=$(cat << EOF
 SHELL=/bin/bash
-PATH=/sbin:/bin:/usr/sbin:/usr/bin 
+PATH=/sbin:/bin:/usr/sbin:/usr/bin
 MAILTO=root HOME=/
 30 12 * * * snort wget -qO- https://www.snort.org/downloads/community/snort3-community-rules.tar.gz | tar xz --overwrite --transform 's/snort3-community-rules\///g' -C $snortpath/etc/snort snort3-community-rules/snort3-community.rules snort3-community-rules/sid-msg.map
+EOF
+)
+
+export delete_inactive_user=$(cat << EOF
+#!/bin/bash
+for user in $(ls /bastion/persistent-access); do
+        is_old = $(sudo lastlog -b 90 -u $user)
+        if [ ! $is_old ]; then
+                echo "$user is current"
+        else
+                echo "$user is inactive"
+                sudo userdel -f $user
+        fi
+done
 EOF
 )
 
@@ -49,7 +83,7 @@ function install_sshd {
     echo "Installing openssh-server"
     sudo dnf install -y openssh-server
     sudo systemctl enable sshd
-    echo "Starting openssh-server" 
+    echo "Starting openssh-server"
     sudo systemctl start sshd
 
 }
@@ -82,7 +116,7 @@ function install_snort {
     sudo ldconfig
 
     cd $current_directory
-    
+
     wget https://github.com/snort3/snort3/archive/refs/heads/master.zip
     mkdir -p $snortpath/etc
     mv master.zip snort.zip
@@ -125,16 +159,34 @@ function configure_snort {
 
 }
 
+function install_fail2ban {
+
+    sudo dnf erase denyhosts
+    sudo dnf install fail2ban
+    sudo systectl start fail2ban
+
+}
+
 function install_bastion_script {
 
     # bastion users
     sudo mkdir -p /bastion/persistent-access
+    semanage fcontext -a -e /home /bastion/persistent-access
+    restorecon -R /bastion/persistent-access
     sudo groupadd bastion
+ 
+    # user management
+    sudo echo -e "$delete_inactive_user" | sudo tee /etc/cron.daily/delete_inactive_users
+    sudo chmod a+x /etc/cron.daily/delete_inactive_users
 
     # bastion program
     sudo mkdir -p /usr/local/persistent-bastion
-    sudo wget https://raw.githubusercontent.com/tonymarkel/persistent-bastion/main/add-bastion-user -P /usr/sbin/
-    sudo wget https://raw.githubusercontent.com/tonymarkel/persistent-bastion/main/persistent-bastion.py -P /usr/local/persistent-bastion/
+    sudo wget https://raw.githubusercontent.com/tonymarkel/persistent-bastion/main/add-bastion-user --backups=1 -P /usr/sbin/
+    sudo chmod a+x /usr/sbin/add-bastion-user
+    sudo wget https://raw.githubusercontent.com/tonymarkel/persistent-bastion/main/persistent-bastion.py --backups-1 -P /usr/local/persistent-bastion/
+
+    # motd
+    sudo echo -e "$motd" | sudo tee -a /etc/motd
 
 }
 
@@ -159,8 +211,11 @@ function main {
         install_snort
     else
         echo "ERROR: Previous install of Snort detected. Exiting."
-        exit 1 
+        exit 1
     fi
+
+    # Install fail2ban
+    install_fail2ban
 
     # Configure Snort as IPS with community rules
     configure_snort
@@ -169,6 +224,7 @@ function main {
     install_bastion_script
 
     # Reboot
+    echo "Installation Complete. Rebooting the system."
     sudo reboot
 
 }
