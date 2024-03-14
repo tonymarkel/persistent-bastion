@@ -6,7 +6,7 @@ resource "oci_core_instance" "bastion" {
         ]
     }
 
-    compartment_id = "ocid1.tenancy.oc1..."
+    compartment_id = "ocid1.compartment.oc1..."
     availability_domain = "abcd:...AD-1"
     shape = "VM.Standard3.Flex"
     state = "RUNNING"
@@ -21,7 +21,7 @@ resource "oci_core_instance" "bastion" {
         boot_volume_vpus_per_gb = 10
 
         instance_source_image_filter_details {
-            compartment_id = "ocid1.tenancy.oc1..."
+            compartment_id = "ocid1.compartment.oc1..."
         }
     }
 
